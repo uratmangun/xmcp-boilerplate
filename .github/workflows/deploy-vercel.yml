@@ -131,7 +131,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{
               \"name\": \"$PROJECT_NAME\",
-              \"framework\": \"nextjs\"
+              \"framework\": null
             }")
           
           PROJECT_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
@@ -142,17 +142,14 @@ jobs:
             echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
             echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
             
-            # Build the application (can handle Next.js or static)
-            echo "🔨 Building application..."
-            if [ -f "next.config.js" ] || [ -f "next.config.mjs" ] || [ -f "next.config.ts" ]; then
-              echo "Next.js detected, building with bun build"
-              bun run build
-            elif [ -f "package.json" ] && grep -q '"build"' package.json; then
-              echo "Build script found, running bun build"
+            # Build the XMCP application
+            echo "🔨 Building XMCP application..."
+            if [ -f "package.json" ] && grep -q '"build"' package.json; then
+              echo "Build script found, running build"
               bun run build
             else
-              echo "No specific build configuration found, attempting standard build"
-              bun run build || echo "Build command not available"
+              echo "No build script found in package.json"
+              exit 1
             fi
             
             # Link the project to current directory
@@ -168,9 +165,7 @@ jobs:
         run: bun run build
         env:
           NODE_ENV: production
-          NEXT_TELEMETRY_DISABLED: 1
           NODE_OPTIONS: "--max-old-space-size=4096"
-          NEXT_PUBLIC_APP_DOMAIN: https://${{ steps.deploy-temp.outputs.production_domain }}
           # Pass all Farcaster and API configuration for build-time generation
           FARCASTER_FID: ${{ secrets.FARCASTER_FID }}
           FARCASTER_CUSTODY_ADDRESS: ${{ secrets.FARCASTER_CUSTODY_ADDRESS }}
@@ -193,7 +188,7 @@ jobs:
           FARCASTER_FID: ${{ secrets.FARCASTER_FID }}
           FARCASTER_CUSTODY_ADDRESS: ${{ secrets.FARCASTER_CUSTODY_ADDRESS }}
           FARCASTER_CUSTODY_PRIVATE_KEY: ${{ secrets.FARCASTER_CUSTODY_PRIVATE_KEY }}
-          NEXT_PUBLIC_APP_DOMAIN: https://${{ steps.generate-vercel-project.outputs.project_name }}.vercel.app
+          APP_DOMAIN: https://${{ steps.generate-vercel-project.outputs.project_name }}.vercel.app
           # App Metadata
           FARCASTER_APP_NAME: ${{ secrets.FARCASTER_APP_NAME }}
           FARCASTER_APP_BUTTON_TITLE: ${{ secrets.FARCASTER_APP_BUTTON_TITLE }}
@@ -277,7 +272,7 @@ jobs:
           FARCASTER_FID: ${{ secrets.FARCASTER_FID }}
           FARCASTER_CUSTODY_ADDRESS: ${{ secrets.FARCASTER_CUSTODY_ADDRESS }}
           FARCASTER_CUSTODY_PRIVATE_KEY: ${{ secrets.FARCASTER_CUSTODY_PRIVATE_KEY }}
-          NEXT_PUBLIC_APP_DOMAIN: https://${{ steps.generate-vercel-project.outputs.project_name }}.vercel.app
+          APP_DOMAIN: https://${{ steps.generate-vercel-project.outputs.project_name }}.vercel.app
           # App Metadata
           FARCASTER_APP_NAME: ${{ secrets.FARCASTER_APP_NAME }}
           FARCASTER_APP_BUTTON_TITLE: ${{ secrets.FARCASTER_APP_BUTTON_TITLE }}
